@@ -2,3 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+.title-stroke {
+    -webkit-text-stroke: 2px #000;
+    -webkit-text-fill-color: transparent;
+}
