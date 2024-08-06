@@ -14,8 +14,8 @@ const TaskCard = ({ task }: TaskCardProps) => {
 
       <p className="mb-1">
         {" "}
-        <span className="font-bold">Task Info:</span>
-        {title}
+        <span className="font-bold">Task Info: </span>
+         {title}
       </p>
 
       <div>
