@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import TaskCard from "./components/Card/TaskCard";
 import { TaskDataType } from "./Types/task";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInView } from "react-intersection-observer";
 
 export default function Home() {
-
-   const [tasksList, setTasksList] = useState<TaskDataType[]>([]);
+  const { ref, inView } = useInView();
 
   const fetchTask = async ({ pageParam }: { pageParam: number }) => {
     const res = await fetch(
@@ -17,23 +17,39 @@ export default function Home() {
     return res.json();
   };
 
-  const { data, error, fetchNextPage, status,  } = useInfiniteQuery({
+  const {
+    data,
+    error,
+    fetchNextPage,
+    status,
+    isFetchingNextPage,
+    hasNextPage,
+  } = useInfiniteQuery({
     queryKey: ["tasksList"],
     queryFn: fetchTask,
     initialPageParam: 1,
 
     getNextPageParam: (lastPage, allPages) => {
-  
-      return allPages?.length + 1;
+      const createNextPageParam = lastPage?.length
+        ? allPages.length + 1
+        : undefined;
+
+      return createNextPageParam;
     },
   });
 
-  const content = data?.pages.map((tasks: TaskDataType[]) => 
+  const content = data?.pages.map((tasks: TaskDataType[]) =>
     tasks?.map((task) => {
-      return  <TaskCard key={task?.id} task={task} />
-    }) 
-   );
+      return <TaskCard key={task?.id} task={task} />;
+    })
+  );
 
+  useEffect(() => {
+    if (inView && hasNextPage) {
+      console.log("Fire");
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, fetchNextPage]);
 
   if (status === "pending") {
     return <p>Loading....</p>;
@@ -55,18 +71,26 @@ export default function Home() {
           {/* ----------------Task Card ----------------  */}
           {content}
 
-           {/* ----------Load More Button----------- */}
+          {/* ----------Load More Button (For Manual Button Click loading)----------- */}
+          <button
+            ref={ref}
+            disabled={!hasNextPage || isFetchingNextPage}
+            onClick={() => fetchNextPage()}
+            className="bg-black text-[14px] w-7/12 h-[40px] rounded-full text-white mt-auto hidden"
+          >
+            {isFetchingNextPage
+              ? "Loading More..."
+              : hasNextPage
+              ? "Load More..."
+              : "Nothing more to load ..."}
+          </button>
 
-        <button
-          onClick={() => fetchNextPage()}
-          className="bg-black text-[14px] w-[110px] h-[40px] rounded-full text-white mt-auto"
-        >
-          Load More...
-        </button>
+          {/* ---------------Invisible element for trigger last element to call fetchNextPage function automatically to achieve infinity scrolling Feature-------- */}
+          {hasNextPage && <button ref={ref}>Loading more ...</button>}
         </div>
-
-       
       </div>
     </main>
   );
 }
+
+
